@@ -25,3 +25,30 @@ def add_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df.fillna(method='bfill', inplace=True)
     return df
 
+def prepare_data(start_date: str, end_date: str, split_ratio: float = 0.8):
+    '''
+    Here we will fetch the Bitcoin data and prepare training and testing datasets.
+    The split_ratio determines the proportion of data used for training vs testing.
+    '''
+    df = fetch_bitcoin_data(start_date, end_date)
+    df = add_technical_indicators(df)
+
+    ## Converting some features to percentage
+    df['Close_pct'] = df['Close'].pct_change() * 100
+    
+    # Define features to use in the environment state later
+    feature_columns = ['Close', 'MA20', 'RSI', 'Close_pct']
+    data = df[feature_columns].copy()
+
+    ## Split into training and testing datasets
+    split_idx = int(len(data) * split_ratio)
+    train_data = data.iloc[:split_idx].reset_index(drop=True)
+    test_data = data.iloc[split_idx:].reset_index(drop=True)
+    return train_data, test_data
+
+if __name__ == "__main__":
+    train, test = prepare_data("2016-01-01", "2023-01-01")
+    print(f"Training Data Sample: {train.head}, Training Shape: {train.shape}\n")
+    print(f"Testing Data Sample: {test.head}, Testing Shape: {test.shape}\n")
+    print("Testing Data Sample:\n", test.head())
+    print(train.head(3).T)
